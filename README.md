@@ -18,26 +18,26 @@ Collection of useful Helm Charts (at least for me 😜) for open-source projects
 
 ### AI Apps
 
-| Status | Name | Category | Description | Website | GitHub |
+| Status | Name | Category | Description | | |
 |--------|------|----------|-------------|---------|--------|
-| 🛠 | Ollama | LLMs Manager | Expose LLMs as API | [Link][ollama-website] | [Link][ollama-github] |
-| 🛠 | Open WebUI | AI Interface | User-friendly AI Interface (Supports Ollama, OpenAI API, ...) | [Link][openwebui-website] | [Link][openwebui-github] |
-| 🛠 | Firecrawl | Crawler | Turn entire websites into LLM-ready markdown or structured data. Scrape, crawl and extract with a single API. | [Link][firecrawl-website] | [Link][firecrawl-github] |
-| 🛠 | Danswer | RAG | Danswer is the open source AI assistant connected to your company's docs, apps, and people. | [Link][danswer-website] | [link][danswer-github] |
-| 🛠 | ComfyUI + Flux | Image | Deploy ComfyUI and Flux1.1Pro |  | [Link][comfyui-flux-github] |
-| 🚧 | Perplexica | Search | Open-source alternative to Perplexity | | [link][perplexica-github] |
-| 📋 | Agenta | Prompt Manager | Agenta provides integrated tools for prompt engineering, versioning, evaluation, and observability, all in one place. | [Link][agenta-website] | [link][agenta-github] |
-| 📋 | Promptfoo | Security | Test your prompts, agents, and RAGs. Red teaming, pentesting, and vulnerability scanning for LLMs. Compare performance of GPT, Claude, Gemini, Llama, and more. Simple declarative configs with command line and CI/CD integration. | [Link][promptfoo-website] | [link][promptfoo-github] |
-| 📋 | OpenPerplex | Search | Open-source alternative to Perplexity | [Link][openperplex-website] | [link][openperplex-github] |
-| 📋 | Crawl4AI | Crawler | Open-source alternative to Perplexity | [Link][openperplex-website] | [link][openperplex-github] |
-| 📋 | Typebot | Chatbot | Typebot is a powerful chatbot builder that you can self-host. | [Link][typebot-website] | [link][typebot-github] |
+| 🛠 | Ollama | LLMs Manager | Expose LLMs as API | [Website][ollama-website] | [GitHub][ollama-github] |
+| 🛠 | Open WebUI | AI WebUI | User-friendly AI Interface (Supports Ollama, OpenAI API, ...) | [Website][openwebui-website] | [GitHub][openwebui-github] |
+| 🛠 | Firecrawl | Crawler | Turn entire websites into LLM-ready markdown or structured data. Scrape, crawl and extract with a single API. | [Website][firecrawl-website] | [GitHub][firecrawl-github] |
+| 🛠 | Danswer | RAG | Danswer is the open source AI assistant connected to your company's docs, apps, and people. | [Website][danswer-website] | [GitHub][danswer-github] |
+| 🛠 | ComfyUI + Flux | Image | Deploy ComfyUI and Flux1.1Pro |  | [GitHub][comfyui-flux-github] |
+| 🚧 | Perplexica | Search | Open-source alternative to Perplexity | | [GitHub][perplexica-github] |
+| 📋 | Agenta | Prompt Manager | Agenta provides integrated tools for prompt engineering, versioning, evaluation, and observability, all in one place. | [Website][agenta-website] | [GitHub][agenta-github] |
+| 📋 | Promptfoo | Security | Test your prompts, agents, and RAGs. Red teaming, pentesting, and vulnerability scanning for LLMs. Compare performance of GPT, Claude, Gemini, Llama, and more. Simple declarative configs with command line and CI/CD integration. | [Website][promptfoo-website] | [GitHub][promptfoo-github] |
+| 📋 | OpenPerplex | Search | Open-source alternative to Perplexity | [Website][openperplex-website] | [GitHub][openperplex-github] |
+| 📋 | Crawl4AI | Crawler | Open-source LLM Friendly Web Crawler & Scrapper | [Website][crawl4ai-website] | [GitHub][crawl4ai-github] |
+| 📋 | Typebot | Chatbot | Typebot is a powerful chatbot builder that you can self-host. | [Website][typebot-website] | [GitHub][typebot-github] |
 
 ### AI Agents tools
 
 | Status | Name | Category | Description | Website | GitHub |
 |--------|------|----------|-------------|---------|--------|
-| 📋 | Ntfy | Notifications | Send push notifications to your phone or desktop using PUT/POST. | [Link][ntfy-website] | [link][ntfy-github] |
-| 📋 | HeyForm | Forms | Simplify data collection, engage users, and achieve meaningful results. | [Link][heyform-website] | [link][heyform-github] |
+| 📋 | Ntfy | Notifications | Send push notifications to your phone or desktop using PUT/POST. | [Website][ntfy-website] | [GitHub][ntfy-github] |
+| 📋 | HeyForm | Forms | Simplify data collection, engage users, and achieve meaningful results. | [Website][heyform-website] | [GitHub][heyform-github] |
 
 [ollama-website]: https://ollama.com
 [ollama-github]: https://github.com/ollama/ollama
@@ -55,6 +55,8 @@ Collection of useful Helm Charts (at least for me 😜) for open-source projects
 [agenta-github]: https://github.com/agenta-ai/agenta
 [promptfoo-website]: https://promptfoo.dev/
 [promptfoo-github]: https://github.com/promptfoo/promptfoo
+[crawl4ai-website]: https://crawl4ai.com
+[crawl4ai-github]: https://github.com/unclecode/crawl4ai
 [typebot-website]: https://typebot.io/
 [typebot-github]: https://github.com/baptisteArno/typebot.io
 [ntfy-website]: https://ntfy.sh/
