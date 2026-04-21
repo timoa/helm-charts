@@ -1,0 +1,515 @@
+# Default values for multica.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Global settings
+global:
+  # -- Global image pull secrets
+  imagePullSecrets: []
+
+# -- Replica count for backend and frontend
+replicaCount: 1
+
+# -- Backend configuration
+backend:
+  enabled: true
+  
+  image:
+    repository: ghcr.io/multica-ai/multica-backend
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  
+  imagePullSecrets: []
+  
+  # -- Backend service configuration
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+    annotations: {}
+  
+  # -- Backend ingress configuration
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts:
+      - host: backend.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+  
+  # -- Backend environment variables from ConfigMap
+  envFrom:
+    - configMapRef:
+        name: ""
+        optional: true
+    - secretRef:
+        name: ""
+        optional: true
+  
+  # -- Additional environment variables
+  env: []
+  
+  # -- Backend resource requests and limits
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  
+  # -- Backend health check probes
+  livenessProbe:
+    enabled: true
+    path: /health
+    port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+  
+  readinessProbe:
+    enabled: true
+    path: /health
+    port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+    successThreshold: 1
+  
+  startupProbe:
+    enabled: true
+    path: /health
+    port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 30
+  
+  # -- Backend pod security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+  
+  # -- Backend container security context
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    seccompProfile:
+      type: RuntimeDefault
+  
+  # -- Backend persistence for uploads
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessMode: ReadWriteOnce
+    size: 10Gi
+    annotations: {}
+  
+  # -- Pod topology spread constraints
+  topologySpreadConstraints: []
+  
+  # -- Pod affinity
+  affinity: {}
+  
+  # -- Pod node selector
+  nodeSelector: {}
+  
+  # -- Pod tolerations
+  tolerations: []
+  
+  # -- Pod disruption budget
+  podDisruptionBudget:
+    enabled: false
+    minAvailable: 1
+    maxUnavailable: ""
+  
+  # -- Pod annotations
+  podAnnotations: {}
+
+  # -- Autoscaling configuration (requires metrics-server)
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+    customMetrics: []
+    behavior: {}
+
+# -- Frontend configuration
+frontend:
+  enabled: true
+  
+  image:
+    repository: ghcr.io/multica-ai/multica-frontend
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  
+  imagePullSecrets: []
+  
+  # -- Build-time args (passed as runtime env for Next.js)
+  buildArgs:
+    # -- Backend API URL (internal service URL)
+    remoteApiUrl: "http://multica-backend:8080"
+    # -- Public Google Client ID for OAuth
+    nextPublicGoogleClientId: ""
+    # -- WebSocket URL (if different from API)
+    nextPublicWsUrl: ""
+  
+  # -- Frontend service configuration
+  service:
+    type: ClusterIP
+    port: 3000
+    targetPort: 3000
+    annotations: {}
+  
+  # -- Frontend ingress configuration
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts:
+      - host: multica.example.com
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+  
+  # -- Frontend environment variables from ConfigMap
+  envFrom: []
+  
+  # -- Additional environment variables
+  env:
+    - name: HOSTNAME
+      value: "0.0.0.0"
+  
+  # -- Frontend resource requests and limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  
+  # -- Frontend health check probes
+  livenessProbe:
+    enabled: true
+    path: /
+    port: 3000
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+  
+  readinessProbe:
+    enabled: true
+    path: /
+    port: 3000
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+    successThreshold: 1
+  
+  startupProbe:
+    enabled: true
+    path: /
+    port: 3000
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 30
+  
+  # -- Frontend pod security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 1000
+  
+  # -- Frontend container security context
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    seccompProfile:
+      type: RuntimeDefault
+  
+  # -- Pod topology spread constraints
+  topologySpreadConstraints: []
+  
+  # -- Pod affinity
+  affinity: {}
+  
+  # -- Pod node selector
+  nodeSelector: {}
+  
+  # -- Pod tolerations
+  tolerations: []
+  
+  # -- Pod disruption budget
+  podDisruptionBudget:
+    enabled: false
+    minAvailable: 1
+    maxUnavailable: ""
+  
+  # -- Pod annotations
+  podAnnotations: {}
+
+  # -- Autoscaling configuration (requires metrics-server)
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 80
+    customMetrics: []
+    behavior: {}
+
+# -- PostgreSQL configuration
+# IMPORTANT: Bitnami images are deprecated and no longer receive security updates.
+# For production, consider these alternatives:
+#   1. External managed PostgreSQL (AWS RDS, Google Cloud SQL, Azure, Supabase, Neon) - RECOMMENDED
+#   2. CloudNativePG operator: https://cloudnative-pg.io/
+#   3. Zalando Postgres Operator: https://github.com/zalando/postgres-operator
+#   4. Percona Distribution for PostgreSQL
+#
+# To use external PostgreSQL, set postgresql.enabled=false and configure externalPostgresql below
+postgresql:
+  # -- Enable Bitnami PostgreSQL subchart (DEPRECATED - not recommended for production)
+  enabled: false
+
+  # -- PostgreSQL auth configuration
+  auth:
+    # -- PostgreSQL database name
+    database: multica
+    # -- PostgreSQL username
+    username: multica
+    # -- PostgreSQL password (required if existingSecret is not set)
+    password: ""
+    # -- Name of existing secret to use for PostgreSQL credentials
+    existingSecret: ""
+    # -- Key in existing secret for PostgreSQL password
+    secretKeys:
+      adminPasswordKey: postgres-password
+      userPasswordKey: password
+      replicationPasswordKey: replication-password
+  
+  # -- PostgreSQL image (must include pgvector extension)
+  image:
+    repository: pgvector/pgvector
+    tag: pg17
+    pullPolicy: IfNotPresent
+  
+  # -- PostgreSQL primary configuration
+  primary:
+    # -- PostgreSQL service configuration
+    service:
+      ports:
+        postgresql: 5432
+    
+    # -- PostgreSQL persistence
+    persistence:
+      enabled: true
+      storageClass: ""
+      accessModes:
+        - ReadWriteOnce
+      size: 10Gi
+    
+    # -- PostgreSQL resource requests and limits
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+      requests:
+        cpu: 250m
+        memory: 512Mi
+    
+    # -- PostgreSQL pod annotations
+    podAnnotations: {}
+    
+    # -- PostgreSQL pod labels
+    podLabels: {}
+    
+    # -- PostgreSQL node selector
+    nodeSelector: {}
+    
+    # -- PostgreSQL tolerations
+    tolerations: []
+    
+    # -- PostgreSQL affinity
+    affinity: {}
+    
+    # -- PostgreSQL pod security context
+    podSecurityContext:
+      enabled: true
+      fsGroup: 1001
+    
+    # -- PostgreSQL container security context
+    containerSecurityContext:
+      enabled: true
+      runAsUser: 1001
+      runAsNonRoot: true
+
+# -- External PostgreSQL configuration (RECOMMENDED - used when postgresql.enabled=false)
+# This is the preferred method for production deployments.
+# Examples: AWS RDS, Google Cloud SQL, Azure Database, Supabase, Neon, or self-managed PostgreSQL
+externalPostgresql:
+  # -- External PostgreSQL hostname (e.g., mydb.abc123.us-east-1.rds.amazonaws.com)
+  host: ""
+  # -- External PostgreSQL port
+  port: 5432
+  # -- External PostgreSQL database name
+  database: multica
+  # -- External PostgreSQL username
+  username: ""
+  # -- External PostgreSQL password (required if existingSecret is not set)
+  # IMPORTANT: Use existingSecret for production instead of plain text passwords
+  password: ""
+  # -- Name of existing secret to use for PostgreSQL credentials (RECOMMENDED)
+  # Create secret with: kubectl create secret generic multica-db-secret --from-literal=password='your-password'
+  existingSecret: ""
+  # -- Key in existing secret for PostgreSQL password
+  existingSecretPasswordKey: password
+  # -- Additional connection parameters (e.g., sslmode)
+  # For AWS RDS: sslmode=require
+  # For Supabase: sslmode=require
+  extraParams: "sslmode=require"
+
+# -- Multica application configuration
+# These values are used to create ConfigMaps and Secrets
+config:
+  # -- Application environment (production, development)
+  appEnv: production
+  
+  # -- Backend server port
+  port: 8080
+  
+  # -- Frontend origin URL (for CORS)
+  frontendOrigin: ""
+  
+  # -- Additional CORS allowed origins (comma-separated)
+  corsAllowedOrigins: ""
+  
+  # -- Multica app public URL
+  multicaAppUrl: ""
+  
+  # -- Cookie domain for authentication cookies
+  cookieDomain: ""
+  
+  # -- Resend API configuration (optional)
+  resend:
+    # -- Resend API key (sensitive - should be in secret)
+    apiKey: ""
+    # -- Resend from email address
+    fromEmail: noreply@multica.ai
+  
+  # -- Google OAuth configuration (optional)
+  google:
+    # -- Google OAuth Client ID (can be non-sensitive)
+    clientId: ""
+    # -- Google OAuth Client Secret (sensitive - should be in secret)
+    clientSecret: ""
+    # -- Google OAuth redirect URI
+    redirectUri: ""
+  
+  # -- S3/CDN configuration (optional)
+  s3:
+    # -- S3 bucket name
+    bucket: ""
+    # -- S3 region
+    region: us-west-2
+  
+  # -- CloudFront configuration (optional)
+  cloudfront:
+    # -- CloudFront domain
+    domain: ""
+    # -- CloudFront key pair ID
+    keyPairId: ""
+    # -- CloudFront private key (sensitive - should be in secret)
+    privateKey: ""
+
+# -- Secrets configuration
+# Use this to reference existing secrets or create new ones
+secrets:
+  # -- JWT secret for authentication (REQUIRED)
+  jwt:
+    # -- Name of existing secret containing JWT secret
+    existingSecret: ""
+    # -- Key in existing secret for JWT secret
+    existingSecretKey: jwt-secret
+    # -- JWT secret value (only used if existingSecret is not set)
+    # IMPORTANT: Change this in production!
+    value: "change-me-in-production"
+  
+  # -- PostgreSQL credentials (used when postgresql.enabled=false and externalPostgresql.existingSecret is not set)
+  postgresql:
+    # -- PostgreSQL password (only used if externalPostgresql.existingSecret is not set)
+    password: ""
+  
+  # -- Google OAuth client secret
+  google:
+    # -- Name of existing secret containing Google client secret
+    existingSecret: ""
+    # -- Key in existing secret for Google client secret
+    existingSecretKey: google-client-secret
+    # -- Google client secret value (only used if existingSecret is not set)
+    value: ""
+  
+  # -- Resend API key
+  resend:
+    # -- Name of existing secret containing Resend API key
+    existingSecret: ""
+    # -- Key in existing secret for Resend API key
+    existingSecretKey: resend-api-key
+    # -- Resend API key value (only used if existingSecret is not set)
+    value: ""
+  
+  # -- CloudFront private key
+  cloudfront:
+    # -- Name of existing secret containing CloudFront private key
+    existingSecret: ""
+    # -- Key in existing secret for CloudFront private key
+    existingSecretKey: cloudfront-private-key
+    # -- CloudFront private key value (only used if existingSecret is not set)
+    value: ""
+
+# -- Service account configuration
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use
+  name: ""
+
+# -- RBAC configuration
+rbac:
+  # -- Specifies whether RBAC resources should be created
+  create: true
+
+# -- Network policy configuration
+networkPolicy:
+  # -- Specifies whether a NetworkPolicy should be created
+  enabled: true
+  # -- Additional ingress rules
+  ingress: []
+  # -- Additional egress rules
+  egress: []
+
+# -- Pod security policy configuration (deprecated in k8s 1.21+)
+podSecurityPolicy:
+  enabled: false

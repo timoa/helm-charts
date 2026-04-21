@@ -1,0 +1,69 @@
+CHART NAME: {{ .Chart.Name }}
+CHART VERSION: {{ .Chart.Version }}
+APP VERSION: {{ .Chart.AppVersion }}
+
+** Please be patient while the chart is being deployed **
+
+{{- if .Values.postgresql.enabled }}
+
+WARNING: Using embedded Bitnami PostgreSQL. This is deprecated and not recommended for production.
+Consider using external managed PostgreSQL (AWS RDS, Google Cloud SQL, Azure, Supabase, Neon)
+or the CloudNativePG operator for production deployments.
+
+PostgreSQL with pgvector extension is being deployed as part of this release.
+{{- else }}
+
+This release uses an external PostgreSQL database (RECOMMENDED for production):
+  Host: {{ .Values.externalPostgresql.host }}
+  Port: {{ .Values.externalPostgresql.port }}
+  Database: {{ .Values.externalPostgresql.database }}
+{{- end }}
+
+{{- if and .Values.backend.enabled .Values.frontend.enabled }}
+
+Multica Components:
+{{- if .Values.backend.enabled }}
+  - Backend: {{ include "multica.backend.fullname" . }}:{{ .Values.backend.service.port }}
+{{- end }}
+{{- if .Values.frontend.enabled }}
+  - Frontend: {{ include "multica.frontend.fullname" . }}:{{ .Values.frontend.service.port }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.frontend.ingress.enabled }}
+
+Access Multica:
+  https://{{ (index .Values.frontend.ingress.hosts 0).host }}
+{{- else if contains "LoadBalancer" .Values.frontend.service.type }}
+
+Access Multica:
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        Watch the status with: 'kubectl get svc --namespace {{ .Release.Namespace }} -w {{ include "multica.frontend.fullname" . }}'
+
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "multica.frontend.fullname" . }} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  echo http://$SERVICE_IP:{{ .Values.frontend.service.port }}
+{{- else if contains "NodePort" .Values.frontend.service.type }}
+
+Access Multica:
+  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "multica.frontend.fullname" . }})
+  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
+  echo http://$NODE_IP:$NODE_PORT
+{{- else if contains "ClusterIP" .Values.frontend.service.type }}
+
+Access Multica:
+  kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "multica.frontend.fullname" . }} {{ .Values.frontend.service.port }}:{{ .Values.frontend.service.port }}
+  URL: http://localhost:{{ .Values.frontend.service.port }}
+{{- end }}
+
+{{- if not .Values.secrets.jwt.existingSecret }}
+
+WARNING: You are using the default JWT secret. Please change it in production!
+{{- end }}
+
+{{- if and .Values.postgresql.enabled (not .Values.postgresql.auth.existingSecret) }}
+
+WARNING: You are using a default PostgreSQL password. Please consider using an existing secret for production!
+{{- end }}
+
+For more information, please visit:
+  https://github.com/multica-ai/multica

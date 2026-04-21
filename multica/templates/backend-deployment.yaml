@@ -1,0 +1,185 @@
+{{- if .Values.backend.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "multica.backend.fullname" . }}
+  labels:
+    {{- include "multica.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      {{- include "multica.backendSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.backend.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "multica.backendSelectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "multica.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.backend.podSecurityContext | nindent 8 }}
+      {{- if .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.global.imagePullSecrets | nindent 8 }}
+      {{- else if .Values.backend.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.backend.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      initContainers:
+        {{- if .Values.postgresql.enabled }}
+        # Wait for PostgreSQL to be ready
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z {{ include "multica.postgresql.host" . }} {{ include "multica.postgresql.port" . }}; do
+                echo "Waiting for PostgreSQL..."
+                sleep 2
+              done
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+          resources:
+            limits:
+              cpu: 100m
+              memory: 64Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+        {{- end }}
+      containers:
+        - name: backend
+          securityContext:
+            {{- toYaml .Values.backend.securityContext | nindent 12 }}
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.config.port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "multica.configMapName" . }}
+          env:
+            # Database configuration with secret injection
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "multica.postgresql.secretName" . }}
+                  key: {{ include "multica.postgresql.secretKey" . }}
+            - name: DATABASE_URL
+              value: {{ include "multica.databaseUrl" . | quote }}
+            # JWT Secret
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "multica.jwt.secretName" . }}
+                  key: {{ include "multica.jwt.secretKey" . }}
+            # Google OAuth Client Secret (optional)
+            {{- if or .Values.secrets.google.existingSecret .Values.secrets.google.value .Values.config.google.clientSecret }}
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "multica.google.secretName" . }}
+                  key: {{ .Values.secrets.google.existingSecretKey }}
+                  optional: true
+            {{- end }}
+            # Resend API Key (optional)
+            {{- if or .Values.secrets.resend.existingSecret .Values.secrets.resend.value .Values.config.resend.apiKey }}
+            - name: RESEND_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "multica.resend.secretName" . }}
+                  key: {{ .Values.secrets.resend.existingSecretKey }}
+                  optional: true
+            {{- end }}
+            # CloudFront Private Key (optional)
+            {{- if or .Values.secrets.cloudfront.existingSecret .Values.secrets.cloudfront.value .Values.config.cloudfront.privateKey }}
+            - name: CLOUDFRONT_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "multica.cloudfront.secretName" . }}
+                  key: {{ .Values.secrets.cloudfront.existingSecretKey }}
+                  optional: true
+            {{- end }}
+            # Additional environment variables
+            {{- with .Values.backend.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- if .Values.backend.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.backend.livenessProbe.path }}
+              port: {{ .Values.backend.livenessProbe.port }}
+            initialDelaySeconds: {{ .Values.backend.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.backend.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.backend.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.backend.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.backend.livenessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.backend.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.backend.readinessProbe.path }}
+              port: {{ .Values.backend.readinessProbe.port }}
+            initialDelaySeconds: {{ .Values.backend.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.backend.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.backend.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.backend.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.backend.readinessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.backend.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.backend.startupProbe.path }}
+              port: {{ .Values.backend.startupProbe.port }}
+            initialDelaySeconds: {{ .Values.backend.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.backend.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.backend.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.backend.startupProbe.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/data/uploads
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: uploads
+          {{- if .Values.backend.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "multica.backend.pvcName" . }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: tmp
+          emptyDir: {}
+      nodeSelector:
+        {{- toYaml .Values.backend.nodeSelector | nindent 8 }}
+      affinity:
+        {{- toYaml .Values.backend.affinity | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.backend.tolerations | nindent 8 }}
+      topologySpreadConstraints:
+        {{- toYaml .Values.backend.topologySpreadConstraints | nindent 8 }}
+{{- end }}

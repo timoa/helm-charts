@@ -1,0 +1,85 @@
+{{/*
+ConfigMap for non-sensitive Multica configuration
+*/}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "multica.configMapName" . }}
+  labels:
+    {{- include "multica.labels" . | nindent 4 }}
+data:
+  # Application settings
+  PORT: {{ .Values.config.port | quote }}
+  APP_ENV: {{ .Values.config.appEnv | quote }}
+  
+  # Frontend URL configuration
+  {{- if .Values.config.frontendOrigin }}
+  FRONTEND_ORIGIN: {{ .Values.config.frontendOrigin | quote }}
+  {{- else if .Values.frontend.ingress.enabled }}
+  FRONTEND_ORIGIN: {{ printf "https://%s" (index .Values.frontend.ingress.hosts 0).host | quote }}
+  {{- else }}
+  FRONTEND_ORIGIN: {{ printf "http://%s-frontend:3000" (include "multica.fullname" .) | quote }}
+  {{- end }}
+  
+  # CORS configuration
+  {{- if .Values.config.corsAllowedOrigins }}
+  CORS_ALLOWED_ORIGINS: {{ .Values.config.corsAllowedOrigins | quote }}
+  {{- end }}
+  
+  # App URL
+  {{- if .Values.config.multicaAppUrl }}
+  MULTICA_APP_URL: {{ .Values.config.multicaAppUrl | quote }}
+  {{- else if .Values.frontend.ingress.enabled }}
+  MULTICA_APP_URL: {{ printf "https://%s" (index .Values.frontend.ingress.hosts 0).host | quote }}
+  {{- else }}
+  MULTICA_APP_URL: {{ printf "http://%s-frontend:3000" (include "multica.fullname" .) | quote }}
+  {{- end }}
+  
+  # Cookie configuration
+  {{- if .Values.config.cookieDomain }}
+  COOKIE_DOMAIN: {{ .Values.config.cookieDomain | quote }}
+  {{- end }}
+  
+  # Resend email configuration
+  {{- if or .Values.config.resend.apiKey .Values.secrets.resend.existingSecret .Values.secrets.resend.value }}
+  RESEND_FROM_EMAIL: {{ .Values.config.resend.fromEmail | quote }}
+  {{- end }}
+  
+  # Google OAuth configuration (non-sensitive)
+  {{- if .Values.config.google.clientId }}
+  GOOGLE_CLIENT_ID: {{ .Values.config.google.clientId | quote }}
+  {{- end }}
+  {{- if .Values.config.google.redirectUri }}
+  GOOGLE_REDIRECT_URI: {{ .Values.config.google.redirectUri | quote }}
+  {{- else if .Values.frontend.ingress.enabled }}
+  GOOGLE_REDIRECT_URI: {{ printf "https://%s/auth/callback" (index .Values.frontend.ingress.hosts 0).host | quote }}
+  {{- end }}
+  
+  # S3 configuration
+  {{- if .Values.config.s3.bucket }}
+  S3_BUCKET: {{ .Values.config.s3.bucket | quote }}
+  S3_REGION: {{ .Values.config.s3.region | quote }}
+  {{- end }}
+  
+  # CloudFront configuration (non-sensitive)
+  {{- if .Values.config.cloudfront.domain }}
+  CLOUDFRONT_DOMAIN: {{ .Values.config.cloudfront.domain | quote }}
+  {{- end }}
+  {{- if .Values.config.cloudfront.keyPairId }}
+  CLOUDFRONT_KEY_PAIR_ID: {{ .Values.config.cloudfront.keyPairId | quote }}
+  {{- end }}
+  
+  # Frontend build args passed as env vars
+  {{- if .Values.frontend.buildArgs.remoteApiUrl }}
+  REMOTE_API_URL: {{ .Values.frontend.buildArgs.remoteApiUrl | quote }}
+  {{- else }}
+  REMOTE_API_URL: {{ printf "http://%s-backend:8080" (include "multica.fullname" .) | quote }}
+  {{- end }}
+  
+  {{- if .Values.frontend.buildArgs.nextPublicGoogleClientId }}
+  NEXT_PUBLIC_GOOGLE_CLIENT_ID: {{ .Values.frontend.buildArgs.nextPublicGoogleClientId | quote }}
+  {{- end }}
+  
+  {{- if .Values.frontend.buildArgs.nextPublicWsUrl }}
+  NEXT_PUBLIC_WS_URL: {{ .Values.frontend.buildArgs.nextPublicWsUrl | quote }}
+  {{- end }}

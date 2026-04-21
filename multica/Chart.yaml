@@ -1,0 +1,31 @@
+apiVersion: v2
+name: multica
+description: A Helm chart for Multica - AI-powered chat platform
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - multica
+  - ai
+  - chat
+  - postgres
+  - pgvector
+home: https://github.com/multica-ai/multica
+sources:
+  - https://github.com/multica-ai/multica
+# IMPORTANT: Bitnami images are deprecated and no longer receive security updates.
+# For production, use one of these alternatives:
+#   1. CloudNativePG (CNCF operator): https://cloudnative-pg.io/
+#   2. Zalando Postgres Operator: https://github.com/zalando/postgres-operator
+#   3. External managed PostgreSQL (AWS RDS, Google Cloud SQL, Azure, Supabase, Neon)
+#   4. Percona Distribution for PostgreSQL
+# To use an external database, set postgresql.enabled=false and configure externalPostgresql
+dependencies:
+  - name: postgresql
+    version: 16.x.x
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: postgresql.enabled
+    alias: postgresql
+maintainers:
+  - name: multica-ai
+    url: https://github.com/multica-ai
