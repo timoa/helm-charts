@@ -313,9 +313,12 @@ config:
   # -- Backend server port
   port: 8080
   
+  # -- Log level (debug, info, warn, error)
+  logLevel: info
+  
   # -- Frontend origin URL (for CORS)
   frontendOrigin: ""
-  
+
   # -- Additional CORS allowed origins (comma-separated)
   corsAllowedOrigins: ""
   
@@ -325,10 +328,17 @@ config:
   # -- Cookie domain for authentication cookies
   cookieDomain: ""
   
+  # -- Database connection pool tuning (optional)
+  # These have sensible defaults and only need to be set when tuning a large or constrained deployment.
+  databasePool:
+    # -- Maximum connections per pod (default: 25)
+    # pod_count × maxConns should stay below Postgres max_connections ceiling.
+    maxConns: ""
+    # -- Minimum warm baseline connections per pod (default: 5)
+    minConns: ""
+  
   # -- Resend API configuration (optional)
   resend:
-    # -- Resend API key (sensitive - should be in secret)
-    apiKey: ""
     # -- Resend from email address
     fromEmail: noreply@multica.ai
   
@@ -336,8 +346,6 @@ config:
   google:
     # -- Google OAuth Client ID (can be non-sensitive)
     clientId: ""
-    # -- Google OAuth Client Secret (sensitive - should be in secret)
-    clientSecret: ""
     # -- Google OAuth redirect URI
     redirectUri: ""
   
@@ -354,8 +362,6 @@ config:
     domain: ""
     # -- CloudFront key pair ID
     keyPairId: ""
-    # -- CloudFront private key (sensitive - should be in secret)
-    privateKey: ""
 
 # -- Secrets configuration
 # Use this to reference existing secrets or create new ones

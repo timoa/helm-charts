@@ -90,45 +90,67 @@ helm install multica oci://ghcr.io/timoa-ai/charts/multica \
 | `externalPostgresql.password` or `externalPostgresql.existingSecret` | PostgreSQL credentials | `nil` |
 | `secrets.jwt.value` or `secrets.jwt.existingSecret` | JWT signing secret | `nil` |
 | `config.frontendOrigin` | Frontend URL for CORS | `http://localhost:3000` |
+| `config.logLevel` | Log level (debug, info, warn, error) | `info` |
+| `config.databasePool.maxConns` | Maximum database connections per pod | `25` (built-in) |
+| `config.databasePool.minConns` | Minimum database connections per pod | `5` (built-in) |
+
+### Optional: Database Pool Tuning
+
+For high-traffic deployments, tune the database connection pool:
+
+```yaml
+config:
+  databasePool:
+    maxConns: "50"
+    minConns: "10"
+```
 
 ### Optional: Google OAuth
 
 ```yaml
 config:
-  googleClientId: "your-google-client-id"
-  googleRedirectUri: "https://multica.yourdomain.com/auth/callback"
+  google:
+    clientId: "your-google-client-id"
+    redirectUri: "https://multica.yourdomain.com/auth/callback"
 
 secrets:
   google:
     existingSecret: "multica-google-secret"
-    clientSecretKey: "client-secret"
+    existingSecretKey: "google-client-secret"
 ```
 
 ### Optional: Resend Email
 
 ```yaml
 config:
-  resendFromEmail: "noreply@multica.yourdomain.com"
+  resend:
+    fromEmail: "noreply@multica.yourdomain.com"
 
 secrets:
   resend:
     value: "re_xxxxxxxx"
     # or use existingSecret
+    # existingSecret: "multica-resend-secret"
+    # existingSecretKey: "resend-api-key"
 ```
 
 ### Optional: S3 / CloudFront for File Storage
 
 ```yaml
 config:
-  s3Bucket: "my-multica-bucket"
-  s3Region: "us-west-2"
-  cloudfrontDomain: "cdn.yourdomain.com"
+  s3:
+    bucket: "my-multica-bucket"
+    region: "us-west-2"
+  cloudfront:
+    domain: "cdn.yourdomain.com"
+    keyPairId: "your-key-pair-id"
 
 secrets:
   cloudfront:
-    existingSecret: "multica-cloudfront-secret"
-    keyPairIdKey: "key-pair-id"
-    privateKeyKey: "private-key"
+    value: "-----BEGIN PRIVATE KEY-----\n..."
+    # or use existingSecret
+    # existingSecret: "multica-cloudfront-secret"
+    # existingSecretKey: "cloudfront-private-key"
 ```
 
 ## Upgrading
