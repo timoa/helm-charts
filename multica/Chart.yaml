@@ -13,19 +13,13 @@ keywords:
 home: https://github.com/multica-ai/multica
 sources:
   - https://github.com/multica-ai/multica
-# IMPORTANT: Bitnami images are deprecated and no longer receive security updates.
-# For production, use one of these alternatives:
-#   1. CloudNativePG (CNCF operator): https://cloudnative-pg.io/
-#   2. Zalando Postgres Operator: https://github.com/zalando/postgres-operator
-#   3. External managed PostgreSQL (AWS RDS, Google Cloud SQL, Azure, Supabase, Neon)
-#   4. Percona Distribution for PostgreSQL
-# To use an external database, set postgresql.enabled=false and configure externalPostgresql
-dependencies:
-  - name: postgresql
-    version: 16.x.x
-    repository: oci://registry-1.docker.io/bitnamicharts
-    condition: postgresql.enabled
-    alias: postgresql
+# IMPORTANT: Bitnami PostgreSQL subchart has been removed due to security/maintenance concerns.
+# This chart requires an external PostgreSQL database.
+# Recommended options:
+#   1. Managed PostgreSQL (AWS RDS, Google Cloud SQL, Azure, Supabase, Neon) - RECOMMENDED
+#   2. CloudNativePG operator: https://cloudnative-pg.io/
+#   3. Zalando Postgres Operator: https://github.com/zalando/postgres-operator
+# Configure using externalPostgresql values in values.yaml
 maintainers:
   - name: multica-ai
     url: https://github.com/multica-ai

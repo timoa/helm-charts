@@ -111,76 +111,41 @@ Backend PVC name
 {{- end }}
 
 {{/*
-Determine if external PostgreSQL is used
-*/}}
-{{- define "multica.postgresql.enabled" -}}
-{{- if .Values.postgresql.enabled }}
-true
-{{- else }}
-false
-{{- end }}
-{{- end }}
-
-{{/*
 Get PostgreSQL host
 */}}
 {{- define "multica.postgresql.host" -}}
-{{- if .Values.postgresql.enabled }}
-{{- printf "%s-postgresql" (include "multica.fullname" .) }}
-{{- else }}
 {{- .Values.externalPostgresql.host }}
-{{- end }}
 {{- end }}
 
 {{/*
 Get PostgreSQL port
 */}}
 {{- define "multica.postgresql.port" -}}
-{{- if .Values.postgresql.enabled }}
-{{- .Values.postgresql.primary.service.ports.postgresql }}
-{{- else }}
 {{- .Values.externalPostgresql.port }}
-{{- end }}
 {{- end }}
 
 {{/*
 Get PostgreSQL database name
 */}}
 {{- define "multica.postgresql.database" -}}
-{{- if .Values.postgresql.enabled }}
-{{- .Values.postgresql.auth.database }}
-{{- else }}
 {{- .Values.externalPostgresql.database }}
-{{- end }}
 {{- end }}
 
 {{/*
 Get PostgreSQL username
 */}}
 {{- define "multica.postgresql.username" -}}
-{{- if .Values.postgresql.enabled }}
-{{- .Values.postgresql.auth.username }}
-{{- else }}
 {{- .Values.externalPostgresql.username }}
-{{- end }}
 {{- end }}
 
 {{/*
 Get PostgreSQL secret name
 */}}
 {{- define "multica.postgresql.secretName" -}}
-{{- if .Values.postgresql.enabled }}
-{{- if .Values.postgresql.auth.existingSecret }}
-{{- .Values.postgresql.auth.existingSecret }}
-{{- else }}
-{{- printf "%s-postgresql" (include "multica.fullname" .) }}
-{{- end }}
-{{- else }}
 {{- if .Values.externalPostgresql.existingSecret }}
 {{- .Values.externalPostgresql.existingSecret }}
 {{- else }}
 {{- include "multica.secretName" . }}
-{{- end }}
 {{- end }}
 {{- end }}
 
@@ -188,22 +153,14 @@ Get PostgreSQL secret name
 Get PostgreSQL secret key
 */}}
 {{- define "multica.postgresql.secretKey" -}}
-{{- if .Values.postgresql.enabled }}
-{{- .Values.postgresql.auth.secretKeys.userPasswordKey }}
-{{- else }}
 {{- .Values.externalPostgresql.existingSecretPasswordKey }}
-{{- end }}
 {{- end }}
 
 {{/*
-Get PostgreSQL password from values or secret
+Get PostgreSQL password from values
 */}}
 {{- define "multica.postgresql.passwordValue" -}}
-{{- if .Values.postgresql.enabled }}
-{{- .Values.postgresql.auth.password }}
-{{- else }}
 {{- .Values.externalPostgresql.password }}
-{{- end }}
 {{- end }}
 
 {{/*
@@ -214,13 +171,8 @@ Build DATABASE_URL
 {{- $port := include "multica.postgresql.port" . }}
 {{- $db := include "multica.postgresql.database" . }}
 {{- $user := include "multica.postgresql.username" . }}
-{{- $extraParams := "" }}
-{{- if not .Values.postgresql.enabled }}
-{{- $extraParams = .Values.externalPostgresql.extraParams }}
-{{- end }}
-{{- if .Values.postgresql.enabled }}
-postgres://{{ $user }}:$(DATABASE_PASSWORD)@{{ $host }}:{{ $port }}/{{ $db }}?sslmode=disable
-{{- else if $extraParams }}
+{{- $extraParams := .Values.externalPostgresql.extraParams }}
+{{- if $extraParams }}
 postgres://{{ $user }}:$(DATABASE_PASSWORD)@{{ $host }}:{{ $port }}/{{ $db }}?{{ $extraParams }}
 {{- else }}
 postgres://{{ $user }}:$(DATABASE_PASSWORD)@{{ $host }}:{{ $port }}/{{ $db }}

@@ -64,11 +64,30 @@ jobs:
         if: steps.list-changed.outputs.changed == 'true'
         uses: helm/kind-action@v1.9.0
 
+      - name: Deploy PostgreSQL for testing
+        if: steps.list-changed.outputs.changed == 'true'
+        run: |
+          # Deploy a simple PostgreSQL pod for chart testing
+          kubectl create namespace multica-test
+          kubectl run postgres-test \
+            --namespace multica-test \
+            --image=pgvector/pgvector:pg17 \
+            --env="POSTGRES_DB=multica" \
+            --env="POSTGRES_USER=multica" \
+            --env="POSTGRES_PASSWORD=testpassword" \
+            --expose --port=5432
+          kubectl wait --namespace multica-test \
+            --for=condition=ready pod postgres-test --timeout=60s
+
       - name: Run chart-testing (install)
         if: steps.list-changed.outputs.changed == 'true'
         run: |
-          # Install chart with external PostgreSQL disabled for testing
-          ct install --target-branch ${{ github.event.repository.default_branch }} --chart-dirs . --charts multica --helm-extra-set-args "--set=postgresql.enabled=false --set=externalPostgresql.host=postgres --set=externalPostgresql.password=test"
+          # Install chart with test PostgreSQL
+          ct install --target-branch ${{ github.event.repository.default_branch }} \
+            --chart-dirs . \
+            --charts multica \
+            --namespace multica-test \
+            --helm-extra-set-args "--set=externalPostgresql.host=postgres-test.multica-test.svc.cluster.local --set=externalPostgresql.username=multica --set=externalPostgresql.password=testpassword --set=externalPostgresql.database=multica --set=secrets.jwt.value=test-jwt-secret-for-ci"
 
   release:
     runs-on: ubuntu-latest

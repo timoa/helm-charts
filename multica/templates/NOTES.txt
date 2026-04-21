@@ -4,20 +4,12 @@ APP VERSION: {{ .Chart.AppVersion }}
 
 ** Please be patient while the chart is being deployed **
 
-{{- if .Values.postgresql.enabled }}
-
-WARNING: Using embedded Bitnami PostgreSQL. This is deprecated and not recommended for production.
-Consider using external managed PostgreSQL (AWS RDS, Google Cloud SQL, Azure, Supabase, Neon)
-or the CloudNativePG operator for production deployments.
-
-PostgreSQL with pgvector extension is being deployed as part of this release.
-{{- else }}
-
-This release uses an external PostgreSQL database (RECOMMENDED for production):
+This release uses an external PostgreSQL database:
   Host: {{ .Values.externalPostgresql.host }}
   Port: {{ .Values.externalPostgresql.port }}
   Database: {{ .Values.externalPostgresql.database }}
-{{- end }}
+
+IMPORTANT: Ensure your PostgreSQL database has the pgvector extension installed.
 
 {{- if and .Values.backend.enabled .Values.frontend.enabled }}
 
@@ -57,12 +49,12 @@ Access Multica:
 
 {{- if not .Values.secrets.jwt.existingSecret }}
 
-WARNING: You are using the default JWT secret. Please change it in production!
+WARNING: You are using an inline JWT secret. Please use existingSecret for production!
 {{- end }}
 
-{{- if and .Values.postgresql.enabled (not .Values.postgresql.auth.existingSecret) }}
+{{- if not .Values.externalPostgresql.existingSecret }}
 
-WARNING: You are using a default PostgreSQL password. Please consider using an existing secret for production!
+WARNING: You are using an inline PostgreSQL password. Please use existingSecret for production!
 {{- end }}
 
 For more information, please visit:
