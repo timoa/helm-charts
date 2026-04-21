@@ -1,0 +1,178 @@
+name: Release Helm Charts
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'multica/Chart.yaml'
+      - 'multica/values.yaml'
+      - 'multica/templates/**'
+      - '.github/workflows/release.yaml'
+  pull_request:
+    paths:
+      - 'multica/**'
+      - '.github/workflows/release.yaml'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Chart version override (optional)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.6.1
+
+      - name: Run chart-testing (list-changed)
+        id: list-changed
+        run: |
+          changed=$(ct list-changed --target-branch ${{ github.event.repository.default_branch }} --chart-dirs .)
+          if [[ -n "$changed" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Charts changed: $changed"
+          fi
+
+      - name: Run chart-testing (lint)
+        if: steps.list-changed.outputs.changed == 'true'
+        run: ct lint --target-branch ${{ github.event.repository.default_branch }} --chart-dirs . --charts multica
+
+      - name: Create kind cluster
+        if: steps.list-changed.outputs.changed == 'true'
+        uses: helm/kind-action@v1.9.0
+
+      - name: Run chart-testing (install)
+        if: steps.list-changed.outputs.changed == 'true'
+        run: |
+          # Install chart with external PostgreSQL disabled for testing
+          ct install --target-branch ${{ github.event.repository.default_branch }} --chart-dirs . --charts multica --helm-extra-set-args "--set=postgresql.enabled=false --set=externalPostgresql.host=postgres --set=externalPostgresql.password=test"
+
+  release:
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Get chart version
+        id: chart_version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            version=$(grep '^version:' multica/Chart.yaml | awk '{print $2}')
+            echo "version=$version" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Package Helm Chart
+        run: |
+          helm package multica --destination .cr-release-packages
+          ls -la .cr-release-packages/
+
+      - name: Generate Helm Index
+        run: |
+          helm repo index .cr-release-packages --url "https://github.com/${{ github.repository }}/releases/download/multica-${{ steps.chart_version.outputs.version }}"
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: multica-${{ steps.chart_version.outputs.version }}
+          tag_name: multica-${{ steps.chart_version.outputs.version }}
+          files: .cr-release-packages/*.tgz
+          generate_release_notes: true
+          body: |
+            ## Multica Helm Chart ${{ steps.chart_version.outputs.version }}
+
+            ### Installation
+
+            ```bash
+            # Add the repository
+            helm repo add multica https://github.com/${{ github.repository }}/releases/download/multica-${{ steps.chart_version.outputs.version }}
+
+            # Install with external PostgreSQL (recommended)
+            helm install multica multica/multica \
+              --set externalPostgresql.host=YOUR_DB_HOST \
+              --set externalPostgresql.password=YOUR_DB_PASSWORD
+            ```
+
+            ### Important Notes
+
+            - **External PostgreSQL is recommended** for production (AWS RDS, Google Cloud SQL, Azure, Supabase, Neon)
+            - Embedded Bitnami PostgreSQL is deprecated and disabled by default
+            - See [Chart.yaml](multica/Chart.yaml) for more information
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+          helm push .cr-release-packages/multica-${{ steps.chart_version.outputs.version }}.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
+
+      - name: Update Helm Repository Index
+        run: |
+          # Create or update the index file for GitHub Pages (if enabled)
+          if [ -d "gh-pages" ]; then
+            helm repo index .cr-release-packages --merge gh-pages/index.yaml --url "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          fi
+
+  publish-docs:
+    runs-on: ubuntu-latest
+    needs: release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Helm Docs
+        run: |
+          wget https://github.com/norwoodj/helm-docs/releases/download/v1.13.1/helm-docs_1.13.1_Linux_x86_64.tar.gz
+          tar -xzf helm-docs_1.13.1_Linux_x86_64.tar.gz
+          sudo mv helm-docs /usr/local/bin/
+
+      - name: Generate Helm Docs
+        run: |
+          helm-docs --chart-search-root multica --output-file README.md
+
+      - name: Upload Docs Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-docs
+          path: multica/README.md
